@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Get source code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Java
@@ -20,13 +20,18 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Accept Android SDK licenses
-        run: |
-          yes | sdkmanager --licenses
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK packages
+      - name: Accept SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
+
+      - name: Install SDK packages
         run: |
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -36,7 +41,7 @@ jobs:
       - name: Build APK
         run: gradle assembleDebug
 
-      - name: Save APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SAMIX-mosta-App-APK
