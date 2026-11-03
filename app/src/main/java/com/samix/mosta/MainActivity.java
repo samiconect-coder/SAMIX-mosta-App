@@ -4,29 +4,29 @@ package com.samix.mosta;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
-import android.graphics.Color;
-import android.graphics.Typeface;
+import android.graphics.*;
 import android.graphics.drawable.GradientDrawable;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
-import android.view.Gravity;
-import android.view.View;
+import android.view.*;
 import android.widget.*;
 import java.util.*;
 
 public class MainActivity extends Activity {
 
+    final int BG = Color.rgb(3, 20, 16);
+    final int GREEN = Color.rgb(5, 65, 43);
+    final int GOLD = Color.rgb(239, 190, 70);
+    final int WHITE = Color.WHITE;
+    final int MUTED = Color.rgb(190, 210, 194);
+
     LinearLayout root;
     ToneGenerator tone;
     Handler handler = new Handler();
+
     boolean soundEnabled = true;
     boolean playing = false;
     int volume = 65;
-
-    final int GREEN = Color.rgb(5, 48, 35);
-    final int DARK = Color.rgb(3, 25, 20);
-    final int GOLD = Color.rgb(226, 184, 75);
-    final int WHITE = Color.WHITE;
 
     String[] letters = {
         "A .-", "B -...", "C -.-.", "D -..",
@@ -41,90 +41,150 @@ public class MainActivity extends Activity {
     String[] numbers = {
         "0 -----", "1 .----", "2 ..---",
         "3 ...--", "4 ....-", "5 .....",
-        "6 -....", "7 --...", "8 ---..",
-        "9 ----."
+        "6 -....", "7 --...", "8 ---..", "9 ----."
     };
 
     @Override
-    protected void onCreate(Bundle state) {
-        super.onCreate(state);
+    protected void onCreate(Bundle b) {
+        super.onCreate(b);
 
-        getWindow().setStatusBarColor(DARK);
-        getWindow().setNavigationBarColor(DARK);
+        getWindow().setStatusBarColor(BG);
+        getWindow().setNavigationBarColor(BG);
 
         try {
-            tone = new ToneGenerator(
-                AudioManager.STREAM_MUSIC, volume
-            );
-        } catch (Exception e) {
-            tone = null;
-        }
+            tone = new ToneGenerator(AudioManager.STREAM_MUSIC, volume);
+        } catch (Exception e) {}
 
         home();
     }
 
-    GradientDrawable shape(int color, int stroke) {
+    GradientDrawable panel(int color, int border) {
         GradientDrawable d = new GradientDrawable();
         d.setColor(color);
         d.setCornerRadius(28);
-        d.setStroke(2, stroke);
+        d.setStroke(2, border);
         return d;
+    }
+
+    TextView text(String value, int size, int color) {
+        TextView t = new TextView(this);
+        t.setText(value);
+        t.setTextColor(color);
+        t.setTextSize(size);
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(10, 10, 10, 10);
+        return t;
     }
 
     void setup(String title) {
         ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
 
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(18, 20, 18, 24);
+        root.setPadding(16, 16, 16, 24);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
-        root.setBackgroundColor(DARK);
-        root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        root.setBackground(new PatternBackground());
 
         scroll.addView(root);
         setContentView(scroll);
 
-        TextView heading = new TextView(this);
-        heading.setText("✦ SAMIX ✦\n" + title);
-        heading.setTextColor(GOLD);
-        heading.setTextSize(25);
-        heading.setTypeface(null, Typeface.BOLD);
-        heading.setGravity(Gravity.CENTER);
-        heading.setPadding(8, 18, 8, 25);
-        root.addView(heading);
+        TextView header = text("♛ SAMIX ♛\nmosta App", 29, GOLD);
+        header.setTypeface(null, 1);
+        header.setPadding(10, 22, 10, 8);
+        root.addView(header);
 
-        TextView subtitle = new TextView(this);
-        subtitle.setText("mosta App • تعلم شفرة مورس");
-        subtitle.setTextColor(WHITE);
-        subtitle.setTextSize(14);
-        subtitle.setGravity(Gravity.CENTER);
-        root.addView(subtitle);
+        root.addView(text(title, 17, MUTED));
+        View line = new View(this);
+        line.setBackgroundColor(GOLD);
+        LinearLayout.LayoutParams lp =
+            new LinearLayout.LayoutParams(120, 2);
+        lp.setMargins(0, 10, 0, 14);
+        root.addView(line, lp);
     }
 
-    void addText(String text, int size) {
-        TextView t = new TextView(this);
-        t.setText(text);
-        t.setTextColor(WHITE);
-        t.setTextSize(size);
-        t.setGravity(Gravity.CENTER);
-        t.setPadding(12, 12, 12, 12);
-        root.addView(t);
+    class PatternBackground extends View {
+        Paint p = new Paint(3);
+
+        PatternBackground() {
+            super(MainActivity.this);
+        }
+
+        @Override
+        protected void onDraw(Canvas c) {
+            super.onDraw(c);
+            c.drawColor(BG);
+
+            p.setColor(Color.rgb(8, 45, 31));
+            p.setStrokeWidth(1);
+            p.setStyle(Paint.Style.STROKE);
+
+            for (int y = 0; y < getHeight(); y += 65) {
+                for (int x = 0; x < getWidth(); x += 65) {
+                    c.drawCircle(x, y, 23, p);
+                    c.drawRect(x - 16, y - 16, x + 16, y + 16, p);
+                }
+            }
+
+            p.setColor(Color.rgb(17, 75, 48));
+            p.setStrokeWidth(2);
+            c.drawLine(0, 0, getWidth(), getHeight(), p);
+            c.drawLine(getWidth(), 0, 0, getHeight(), p);
+        }
     }
 
-    void addButton(String text, Runnable action) {
+    void addButton(String label, String icon, Runnable action) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setGravity(Gravity.CENTER);
+        card.setPadding(10, 14, 10, 14);
+        card.setBackground(panel(GREEN, GOLD));
+
+        TextView symbol = text(icon, 34, GOLD);
+        TextView name = text(label, 17, WHITE);
+        name.setTypeface(null, 1);
+
+        card.addView(symbol);
+        card.addView(name);
+
+        LinearLayout.LayoutParams lp =
+            new LinearLayout.LayoutParams(0, 145, 1);
+        lp.setMargins(5, 6, 5, 6);
+
+        card.setOnClickListener(v -> {
+            clickSound();
+            action.run();
+        });
+
+        card.setElevation(7);
+        currentRow.addView(card, lp);
+    }
+
+    LinearLayout currentRow;
+
+    void addRow() {
+        currentRow = new LinearLayout(this);
+        currentRow.setOrientation(LinearLayout.HORIZONTAL);
+        currentRow.setGravity(Gravity.CENTER);
+        root.addView(currentRow);
+    }
+
+    void addText(String value, int size) {
+        root.addView(text(value, size, WHITE));
+    }
+
+    void addAction(String label, Runnable action) {
         Button b = new Button(this);
-        b.setText(text);
+        b.setText(label);
         b.setTextColor(WHITE);
-        b.setTextSize(16);
         b.setAllCaps(false);
-        b.setBackground(shape(GREEN, GOLD));
+        b.setTextSize(15);
+        b.setBackground(panel(GREEN, GOLD));
 
-        LinearLayout.LayoutParams p =
-            new LinearLayout.LayoutParams(
-                -1, -2
-            );
-        p.setMargins(0, 9, 0, 9);
-        root.addView(b, p);
+        LinearLayout.LayoutParams lp =
+            new LinearLayout.LayoutParams(-1, -2);
+        lp.setMargins(0, 7, 0, 7);
+        root.addView(b, lp);
 
         b.setOnClickListener(v -> {
             clickSound();
@@ -132,157 +192,157 @@ public class MainActivity extends Activity {
         });
     }
 
-    void clickSound() {
-        if (soundEnabled && tone != null) {
-            tone.startTone(ToneGenerator.TONE_PROP_BEEP, 65);
-        }
-    }
-
     void home() {
-        setup("الرئيسية");
+        setup("تعلم شفرة مورس بكل سهولة");
 
-        addText("🇩🇿 مرحباً بك في عالم مورس", 22);
-        addText("تعلم • ترجم • استمع • تدرب", 17);
+        TextView welcome = text(
+            "🇩🇿  مرحباً بك في عالم مورس  🇩🇿",
+            19, GOLD
+        );
+        root.addView(welcome);
 
-        addButton("📚 الدروس", () -> lessons());
-        addButton("🔤 مترجم مورس", () -> translator());
-        addButton("📡 تدريب صوت مورس", () -> morsePractice());
-        addButton("🔊 النظام الصوتي", () -> soundSettings());
-        addButton("🧠 الاختبارات", () -> quiz());
+        addRow();
+        addButton("الدروس", "📚", () -> lessons());
+        addButton("مترجم مورس", "🔤", () -> translator());
 
-        addText("SAMIX mosta App | الجزائر", 15);
-    }
+        addRow();
+        addButton("تدريب الصوت", "🎧", () -> practice());
+        addButton("الاختبارات", "📝", () -> quiz());
 
-    void lessons() {
-        setup("دروس مورس");
+        addRow();
+        addButton("الإعدادات", "⚙️", () -> settings());
+        addButton("حول التطبيق", "ⓘ", () -> about());
 
-        addText("النقطة (.) والشرطة (-) هما أساس شفرة مورس.", 17);
-
-        addText("الحروف الإنجليزية", 20);
-        for (String item : letters) {
-            addText(item, 18);
-        }
-
-        addText("الأرقام", 20);
-        for (String item : numbers) {
-            addText(item, 18);
-        }
-
-        addButton("العودة للرئيسية", () -> home());
+        root.addView(text("• • •  — — —  • • •", 23, GOLD));
+        root.addView(text("SAMIX mosta App", 19, GOLD));
+        root.addView(text("Algeria • Mostaganem 🇩🇿", 14, MUTED));
     }
 
     String findCode(char c) {
-        for (String item : letters) {
-            String[] p = item.split(" ");
-            if (p[0].charAt(0) == c) return p[1];
+        for (String s : letters) {
+            String[] a = s.split(" ");
+            if (a[0].charAt(0) == c) return a[1];
         }
 
-        for (String item : numbers) {
-            String[] p = item.split(" ");
-            if (p[0].charAt(0) == c) return p[1];
+        for (String s : numbers) {
+            String[] a = s.split(" ");
+            if (a[0].charAt(0) == c) return a[1];
         }
 
         return null;
     }
 
-    String encode(String text) {
-        StringBuilder result = new StringBuilder();
+    String encode(String input) {
+        StringBuilder out = new StringBuilder();
 
-        for (char c : text.toUpperCase().toCharArray()) {
+        for (char c : input.toUpperCase().toCharArray()) {
             if (c == ' ') {
-                result.append("/ ");
+                out.append("/ ");
             } else {
                 String code = findCode(c);
-                if (code != null) {
-                    result.append(code).append(" ");
-                }
+                if (code != null) out.append(code).append(" ");
             }
         }
 
-        return result.toString().trim();
+        return out.toString().trim();
     }
 
-    String decode(String text) {
-        StringBuilder result = new StringBuilder();
-        String[] words = text.trim().split("\\s*/\\s*");
+    String decode(String input) {
+        StringBuilder out = new StringBuilder();
+        String[] words = input.trim().split("\\s*/\\s*");
 
         for (int w = 0; w < words.length; w++) {
-            String[] codes = words[w].trim().split("\\s+");
-
-            for (String code : codes) {
+            for (String code : words[w].trim().split("\\s+")) {
                 char found = '?';
 
-                for (String item : letters) {
-                    String[] p = item.split(" ");
-                    if (p[1].equals(code)) found = p[0].charAt(0);
+                for (String s : letters) {
+                    String[] a = s.split(" ");
+                    if (a[1].equals(code)) found = a[0].charAt(0);
                 }
 
-                for (String item : numbers) {
-                    String[] p = item.split(" ");
-                    if (p[1].equals(code)) found = p[0].charAt(0);
+                for (String s : numbers) {
+                    String[] a = s.split(" ");
+                    if (a[1].equals(code)) found = a[0].charAt(0);
                 }
 
-                result.append(found);
+                out.append(found);
             }
 
-            if (w < words.length - 1) result.append(" ");
+            if (w < words.length - 1) out.append(" ");
         }
 
-        return result.toString();
+        return out.toString();
+    }
+
+    EditText makeInput(String hint) {
+        EditText e = new EditText(this);
+        e.setHint(hint);
+        e.setHintTextColor(MUTED);
+        e.setTextColor(WHITE);
+        e.setTextSize(17);
+        e.setPadding(14, 12, 14, 12);
+        e.setBackground(panel(GREEN, GOLD));
+        root.addView(e);
+        return e;
+    }
+
+    void lessons() {
+        setup("مكتبة دروس مورس");
+
+        addText("الحروف الإنجليزية", 21);
+        for (String s : letters) addText(s, 19);
+
+        addText("الأرقام", 21);
+        for (String s : numbers) addText(s, 19);
+
+        addAction("العودة للرئيسية", () -> home());
     }
 
     void translator() {
         setup("مترجم مورس");
 
-        EditText input = new EditText(this);
-        input.setHint("اكتب نصاً إنجليزياً أو شفرة مورس");
-        input.setTextColor(WHITE);
-        input.setHintTextColor(GOLD);
-        input.setTextSize(17);
-        input.setPadding(15, 15, 15, 15);
-        input.setBackground(shape(GREEN, GOLD));
-        root.addView(input);
-
-        TextView output = new TextView(this);
-        output.setTextColor(GOLD);
-        output.setTextSize(21);
-        output.setGravity(Gravity.CENTER);
-        output.setPadding(10, 25, 10, 25);
+        EditText input = makeInput("اكتب نصاً إنجليزياً أو شفرة مورس");
+        TextView output = text("ستظهر النتيجة هنا", 20, GOLD);
         root.addView(output);
 
-        addButton("تحويل النص إلى مورس", () -> {
+        addAction("تحويل النص إلى مورس", () -> {
             output.setText(encode(input.getText().toString()));
         });
 
-        addButton("تحويل مورس إلى نص", () -> {
+        addAction("تحويل مورس إلى نص", () -> {
             output.setText(decode(input.getText().toString()));
         });
 
-        addButton("تشغيل النتيجة صوتياً", () -> {
+        addAction("تشغيل صوت النتيجة", () -> {
             playMorse(output.getText().toString());
         });
 
-        addButton("إيقاف الصوت", () -> stopMorse());
-        addButton("العودة للرئيسية", () -> home());
+        addAction("إيقاف الصوت", () -> stopMorse());
+        addAction("الرئيسية", () -> home());
     }
 
-    void morsePractice() {
-        setup("تدريب صوت مورس");
+    void practice() {
+        setup("مختبر صوت مورس");
 
-        addText("استمع إلى النقطة والشرطة", 20);
-        addText("النقطة: قصيرة • الشرطة: طويلة", 17);
+        addText("النقطة قصيرة والشرطة طويلة", 20);
 
-        addButton("تشغيل نقطة", () -> beep(130));
-        addButton("تشغيل شرطة", () -> beep(390));
-        addButton("تشغيل SOS", () -> playMorse("... --- ..."));
-
-        addButton("إيقاف التشغيل", () -> stopMorse());
-        addButton("العودة للرئيسية", () -> home());
+        addAction("تشغيل نقطة  •", () -> beep(130));
+        addAction("تشغيل شرطة  —", () -> beep(390));
+        addAction("تشغيل نداء SOS", () -> playMorse("... --- ..."));
+        addAction("إيقاف الصوت", () -> stopMorse());
+        addAction("الرئيسية", () -> home());
     }
 
     void beep(int duration) {
-        if (!soundEnabled || tone == null) return;
-        tone.startTone(ToneGenerator.TONE_DTMF_0, duration);
+        if (soundEnabled && tone != null) {
+            tone.startTone(ToneGenerator.TONE_DTMF_0, duration);
+        }
+    }
+
+    void clickSound() {
+        if (soundEnabled && tone != null) {
+            tone.startTone(ToneGenerator.TONE_PROP_BEEP, 55);
+        }
     }
 
     void playMorse(String code) {
@@ -291,8 +351,7 @@ public class MainActivity extends Activity {
         if (!soundEnabled || tone == null) return;
 
         playing = true;
-        String sequence = code.replace("/", " / ");
-        playStep(sequence, 0);
+        playStep(code.replace("/", " / "), 0);
     }
 
     void playStep(String code, int index) {
@@ -302,7 +361,7 @@ public class MainActivity extends Activity {
         }
 
         char c = code.charAt(index);
-        int delay = 150;
+        int delay = 130;
 
         if (c == '.') {
             beep(120);
@@ -314,37 +373,31 @@ public class MainActivity extends Activity {
             delay = 500;
         }
 
-        handler.postDelayed(
-            () -> playStep(code, index + 1), delay
-        );
+        handler.postDelayed(() -> playStep(code, index + 1), delay);
     }
 
     void stopMorse() {
         playing = false;
         handler.removeCallbacksAndMessages(null);
 
-        if (tone != null) {
-            tone.stopTone();
-        }
+        if (tone != null) tone.stopTone();
     }
 
-    void soundSettings() {
-        setup("النظام الصوتي");
+    void settings() {
+        setup("إعدادات التطبيق");
 
-        addText(
-            "حالة صوت التطبيق: " +
-            (soundEnabled ? "مفعّل" : "متوقف"), 19
-        );
+        addText("التحكم في الصوت", 20);
+        addText(soundEnabled ? "الصوت مفعل" : "الصوت متوقف", 17);
 
-        addButton("تشغيل الصوت", () -> {
+        addAction("تشغيل الصوت", () -> {
             soundEnabled = true;
-            soundSettings();
+            settings();
         });
 
-        addButton("إيقاف الصوت", () -> {
+        addAction("إيقاف الصوت", () -> {
             soundEnabled = false;
             stopMorse();
-            soundSettings();
+            settings();
         });
 
         addText("مستوى الصوت: " + volume + "%", 18);
@@ -357,48 +410,57 @@ public class MainActivity extends Activity {
         bar.setOnSeekBarChangeListener(
             new SeekBar.OnSeekBarChangeListener() {
                 public void onProgressChanged(
-                    SeekBar s, int value, boolean user
+                    SeekBar b, int value, boolean user
                 ) {
                     volume = value;
                     if (tone != null) tone.release();
 
                     try {
                         tone = new ToneGenerator(
-                            AudioManager.STREAM_MUSIC,
-                            volume
+                            AudioManager.STREAM_MUSIC, volume
                         );
                     } catch (Exception e) {
                         tone = null;
                     }
                 }
 
-                public void onStartTrackingTouch(SeekBar s) {}
-                public void onStopTrackingTouch(SeekBar s) {}
+                public void onStartTrackingTouch(SeekBar b) {}
+                public void onStopTrackingTouch(SeekBar b) {}
             }
         );
 
-        addButton("العودة للرئيسية", () -> home());
+        addAction("الرئيسية", () -> home());
     }
 
     void quiz() {
         setup("اختبار مورس");
 
-        addText("ماذا تعني الشفرة التالية؟", 20);
+        addText("ماذا تعني الشفرة؟", 22);
         addText("... --- ...", 30);
 
-        addButton("SOS", () -> answer(true));
-        addButton("ABC", () -> answer(false));
-        addButton("XYZ", () -> answer(false));
-
-        addButton("العودة للرئيسية", () -> home());
+        addAction("SOS", () -> result(true));
+        addAction("ABC", () -> result(false));
+        addAction("XYZ", () -> result(false));
+        addAction("الرئيسية", () -> home());
     }
 
-    void answer(boolean correct) {
+    void result(boolean correct) {
         Toast.makeText(
             this,
             correct ? "إجابة صحيحة! أحسنت" : "حاول مرة أخرى",
             Toast.LENGTH_SHORT
         ).show();
+    }
+
+    void about() {
+        setup("حول SAMIX");
+
+        addText("SAMIX mosta App", 24);
+        addText("تطبيق جزائري لتعلم شفرة مورس", 18);
+        addText("الإصدار 3.0", 17);
+        addText("صنع بحب في الجزائر 🇩🇿", 17);
+
+        addAction("الرئيسية", () -> home());
     }
 
     @Override
